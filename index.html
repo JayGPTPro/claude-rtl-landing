@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTL לקלוד דסקטופ. סוף סוף עברית כמו שצריך</title>
+<meta name="description" content="פתרון מלא לתמיכת RTL בעברית בקלוד דסקטופ. עובד על Mac ו-Windows. התקנה בפחות מ-2 דקות.">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Heebo', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        warm: {
+          50: '#FAF7F4',
+          100: '#F0EBE3',
+          400: '#C9663C',
+          500: '#B8552B',
+          600: '#9A4520',
+        },
+      },
+    },
+  },
+};
+</script>
+
+<style>
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: #0A0A0A;
+    color: #FAFAFA;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #C9663C 0%, #E8956E 50%, #C9663C 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .glow {
+    box-shadow: 0 0 80px -20px rgba(201, 102, 60, 0.3);
+  }
+
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(10px);
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    border-color: rgba(201, 102, 60, 0.3);
+    background: linear-gradient(180deg, rgba(201,102,60,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    transform: translateY(-2px);
+  }
+
+  .code-block {
+    background: #050505;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-family: 'JetBrains Mono', monospace;
+    direction: ltr;
+    text-align: left;
+  }
+
+  .code-block pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .code-block pre::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .code-block pre::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.02);
+  }
+
+  .code-block pre::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+  }
+
+  .code-block pre::-webkit-scrollbar-thumb:hover {
+    background: rgba(201,102,60,0.4);
+  }
+
+  .copy-btn {
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    background: rgba(201, 102, 60, 0.15);
+    color: #E8956E;
+  }
+
+  .copy-btn.copied {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  }
+
+  /* Chat mockup styles */
+  .chat-mockup {
+    background: #1A1A1A;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  .chat-header {
+    background: #0F0F0F;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chat-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+  }
+
+  .chat-body {
+    padding: 18px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .msg-user {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 10px 14px;
+    align-self: flex-end;
+    max-width: 80%;
+  }
+
+  .msg-claude {
+    color: #E5E5E5;
+    line-height: 1.6;
+    padding: 0 6px;
+  }
+
+  /* Tab styles */
+  .tab-btn {
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .tab-btn.active {
+    background: rgba(201, 102, 60, 0.15);
+    color: #E8956E;
+    border-color: rgba(201, 102, 60, 0.3);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* OS Selector */
+  .os-selector {
+    cursor: pointer;
+  }
+
+  .os-selector.active {
+    border-color: rgba(201, 102, 60, 0.6) !important;
+    background: linear-gradient(135deg, rgba(201,102,60,0.12) 0%, rgba(201,102,60,0.04) 100%) !important;
+    box-shadow: 0 0 40px -10px rgba(201, 102, 60, 0.3);
+  }
+
+  .os-selector.active .active-indicator {
+    opacity: 1 !important;
+  }
+
+  /* OS-specific content visibility */
+  .os-content {
+    display: none;
+  }
+
+  .os-content.active {
+    display: block;
+  }
+
+  /* Step number */
+  .step-num {
+    background: linear-gradient(135deg, #C9663C, #B8552B);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .scroll-fade {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+  }
+
+  .scroll-fade.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="relative overflow-hidden pt-20 pb-24 md:pt-28 md:pb-32">
+  <div class="absolute inset-0 grid-bg opacity-50"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0A0A0A]"></div>
+
+  <div class="max-w-5xl mx-auto px-6 relative">
+    <div class="flex justify-center mb-8">
+      <div class="badge bg-warm-400/10 text-warm-400 border border-warm-400/20">
+        <span class="w-2 h-2 rounded-full bg-warm-400 animate-pulse"></span>
+        עובד על Mac ועל Windows
+      </div>
+    </div>
+
+    <h1 class="text-5xl md:text-7xl font-black text-center leading-tight tracking-tight mb-6">
+      סוף סוף עברית בקלוד דסקטופ
+      <br>
+      <span class="gradient-text">כמו שצריך</span>
+    </h1>
+
+    <p class="text-xl md:text-2xl text-zinc-400 text-center max-w-3xl mx-auto leading-relaxed mb-10 font-light">
+      פתרון שמוסיף תמיכה מלאה ב-RTL לקלוד דסקטופ. הטקסט מתיישר אוטומטית לפי השפה. גם כשמערבבים עברית ואנגלית.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+      <a href="#install" class="bg-warm-400 hover:bg-warm-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all glow w-full sm:w-auto text-center">
+        להתקנה
+      </a>
+      <a href="#difference" class="text-zinc-400 hover:text-white px-8 py-4 transition-colors w-full sm:w-auto text-center">
+        תראו את ההבדל
+      </a>
+    </div>
+
+    <p class="text-center text-sm text-zinc-500 mt-8">
+      התקנה ב-2 דקות. בחינם. פתוח לקוד.
+    </p>
+  </div>
+</section>
+
+<!-- Before / After -->
+<section id="difference" class="py-20 md:py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-14">
+      <h2 class="text-4xl md:text-5xl font-bold mb-4">תראו את ההבדל</h2>
+      <p class="text-zinc-400 text-lg">אותו טקסט. שתי חוויות לגמרי שונות.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- BEFORE -->
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="badge bg-red-500/10 text-red-400 border border-red-500/20">לפני</span>
+          <span class="text-zinc-500 text-sm">Claude Desktop רגיל</span>
+        </div>
+        <div class="chat-mockup">
+          <div class="chat-header">
+            <div class="chat-dot bg-red-500/70"></div>
+            <div class="chat-dot bg-yellow-500/70"></div>
+            <div class="chat-dot bg-green-500/70"></div>
+          </div>
+          <div class="chat-body" dir="ltr" style="text-align: left;">
+            <div class="msg-user" style="align-self: flex-start;">
+              תכין לי טקסט שיווקי קצר על מוצר חדש בשם SpeedBoost
+            </div>
+            <div class="msg-claude" style="text-align: left;">
+              ! בטח<br><br>
+              את SpeedBoost הוא הפתרון החדש שיגרום לאתר שלך לטעון פי 3 מהר יותר. מתאים לכל פלטפורמה: WordPress, Shopify, Webflow ועוד.
+              <br><br>
+              ?רוצה שאוסיף קריאה לפעולה
+            </div>
+          </div>
+        </div>
+        <p class="text-zinc-500 text-sm mt-3 text-center">סימני פיסוק עפים. ערבוב שפות נשבר. בלגן.</p>
+      </div>
+
+      <!-- AFTER -->
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="badge bg-green-500/10 text-green-400 border border-green-500/20">אחרי</span>
+          <span class="text-zinc-500 text-sm">Claude Desktop עם הפאטצ'</span>
+        </div>
+        <div class="chat-mockup">
+          <div class="chat-header">
+            <div class="chat-dot bg-red-500/70"></div>
+            <div class="chat-dot bg-yellow-500/70"></div>
+            <div class="chat-dot bg-green-500/70"></div>
+          </div>
+          <div class="chat-body">
+            <div class="msg-user">
+              תכין לי טקסט שיווקי קצר על מוצר חדש בשם SpeedBoost
+            </div>
+            <div class="msg-claude">
+              בטח!<br><br>
+              SpeedBoost הוא הפתרון החדש שיגרום לאתר שלך לטעון פי 3 מהר יותר. מתאים לכל פלטפורמה: WordPress, Shopify, Webflow ועוד.
+              <br><br>
+              רוצה שאוסיף קריאה לפעולה?
+            </div>
+          </div>
+        </div>
+        <p class="text-zinc-500 text-sm mt-3 text-center">הכל מיושר נכון. עברית מימין. אנגלית בתוך הטקסט.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Story -->
+<section class="py-20 md:py-24 px-6 border-t border-white/5">
+  <div class="max-w-3xl mx-auto">
+    <div class="text-center mb-10">
+      <span class="badge bg-warm-400/10 text-warm-400 border border-warm-400/20 mb-4">הסיפור</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-4">איך הגעתי לפה</h2>
+    </div>
+
+    <div class="card rounded-2xl p-8 md:p-10">
+      <div class="space-y-5 text-zinc-300 text-lg leading-relaxed">
+        <p>
+          חיפשתי המון זמן פתרון לבעיית ה-RTL בקלוד דסקטופ. כל פעם שכתבתי בעברית הייתי רואה את הטקסט נשבר, סימני פיסוק עפים למקום הלא נכון, וערבוב עם אנגלית הופך לכאוס מוחלט.
+        </p>
+        <p>
+          ניסיתי בעצמי כמה פעמים לפתור את זה. בכל ניסיון קלוד פשוט קרס לי בהפעלה והייתי צריך להתקין מחדש. שאלתי המון אנשים בתחום, פתחתי שיחות, חיפשתי בכל מקום אפשרי.
+        </p>
+        <p>
+          רגע לפני שהתייאשתי וחשבתי שזה פשוט לא אפשרי, מצאתי שני אנשים מדהימים שבנו את הפתרון. אחד ל-Windows, אחד ל-Mac. וזה עובד.
+        </p>
+        <p class="text-warm-400 font-medium pt-2">
+          כנראה בקלוד אין דבר כזה "אי אפשר".
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Installation -->
+<section id="install" class="py-20 md:py-28 px-6 border-t border-white/5">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <span class="badge bg-warm-400/10 text-warm-400 border border-warm-400/20 mb-4">התקנה ב-3 שלבים</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-4">דרך Claude Code</h2>
+      <p class="text-zinc-400 text-lg">בלי טרמינלים. בלי פקודות מסובכות. רק העתק והדבק.</p>
+    </div>
+
+    <!-- Big OS Selector -->
+    <div class="mb-10">
+      <p class="text-center text-zinc-500 text-sm mb-4">איזה מחשב יש לכם?</p>
+      <div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <button data-tab="mac" class="os-selector active group relative overflow-hidden rounded-2xl border-2 border-white/10 bg-white/[0.02] p-6 transition-all hover:border-warm-400/50 hover:bg-warm-400/5">
+          <div class="text-5xl mb-3">🍎</div>
+          <div class="text-2xl font-bold mb-1">Mac</div>
+          <div class="text-zinc-500 text-sm">macOS</div>
+          <div class="active-indicator absolute top-3 left-3 w-6 h-6 rounded-full bg-warm-400 flex items-center justify-center text-white text-xs font-bold opacity-0 transition-opacity">
+            ✓
+          </div>
+        </button>
+        <button data-tab="windows" class="os-selector group relative overflow-hidden rounded-2xl border-2 border-white/10 bg-white/[0.02] p-6 transition-all hover:border-warm-400/50 hover:bg-warm-400/5">
+          <div class="text-5xl mb-3">🪟</div>
+          <div class="text-2xl font-bold mb-1">Windows</div>
+          <div class="text-zinc-500 text-sm">Windows 10/11</div>
+          <div class="active-indicator absolute top-3 left-3 w-6 h-6 rounded-full bg-warm-400 flex items-center justify-center text-white text-xs font-bold opacity-0 transition-opacity">
+            ✓
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mac Tab -->
+    <div id="tab-mac" class="tab-content active">
+      <div class="card rounded-2xl p-8">
+        <div class="space-y-6">
+
+          <!-- Step 1 -->
+          <div class="flex gap-4">
+            <div class="step-num">1</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-1">פתחו Claude Code</p>
+              <p class="text-zinc-500 text-sm">בכל תיקייה שתרצו. אם אין לכם, תורידו מ-claude.ai/code</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex gap-4">
+            <div class="step-num">2</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-3">העתיקו את הפרומפט והדביקו לקלוד</p>
+              <div class="code-block rounded-xl p-4 pt-12 relative">
+                <button class="copy-btn absolute top-3 left-3 px-3 py-1.5 rounded-md bg-white/5 text-zinc-400 text-xs font-medium" data-copy="mac-prompt">
+                  העתק
+                </button>
+                <pre id="mac-prompt" class="text-zinc-300 text-sm leading-relaxed" dir="rtl" style="text-align: right; font-family: 'Heebo', sans-serif;">התקן לי את פאטצ' ה-RTL לקלוד דסקטופ במק.
+
+הריפו הרשמי: https://github.com/soguy/claude-desktop-rtl-mac
+
+עשה את הצעדים הבאים:
+1. בצע git clone של הריפו לתיקייה זמנית
+2. הרץ את patch.sh ובחר באפשרות 1 (Install)
+3. וודא שהסקריפט סיים בהצלחה את כל השלבים, במיוחד כיבוי ה-fuse של Electron (EnableEmbeddedAsarIntegrityValidation=off) ו-codesign מחדש
+
+חשוב מאוד: השתמש בסקריפט הרשמי patch.sh של הריפו. אל תנסה לבנות פאטצ' ידנית. בלי שלב כיבוי ה-fuse האפליקציה תקרוס בהפעלה הראשונה.
+
+כשתסיים, אמור לי במפורש שאני צריך לפתוח את Claude-RTL מהתיקייה ~/Applications, לא את הקלוד הרגיל.</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex gap-4">
+            <div class="step-num">3</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-2">פתחו את <span class="text-warm-400">Claude-RTL</span> מהאפליקציות</p>
+              <p class="text-zinc-400 text-sm leading-relaxed mb-3">
+                כשקלוד יסיים, תהיה לכם אפליקציה חדשה בשם <span class="font-mono text-warm-400 text-xs bg-warm-400/10 px-2 py-1 rounded">Claude-RTL</span>. פתחו אותה ספציפית. לא את הקלוד הרגיל.
+              </p>
+              <div class="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                <p class="text-blue-300 text-sm font-medium mb-1">איך מוצאים אותה?</p>
+                <p class="text-zinc-400 text-sm leading-relaxed">
+                  פתחו Finder → בתפריט העליון Go → Home → Applications → Claude-RTL.app
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-white/5">
+          <p class="text-zinc-500 text-xs">
+            הפאטצ' לא נוגע בקלוד המקורי. זו אפליקציה נפרדת לחלוטין. שניהן מחוברות לאותו חשבון ולאותה היסטוריה.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Windows Tab -->
+    <div id="tab-windows" class="tab-content">
+      <div class="card rounded-2xl p-8">
+        <div class="space-y-6">
+
+          <!-- Step 1 -->
+          <div class="flex gap-4">
+            <div class="step-num">1</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-1">פתחו Claude Code</p>
+              <p class="text-zinc-500 text-sm">אם אין לכם, תורידו מ-claude.ai/code</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex gap-4">
+            <div class="step-num">2</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-3">העתיקו את הפרומפט והדביקו לקלוד</p>
+              <div class="code-block rounded-xl p-4 pt-12 relative">
+                <button class="copy-btn absolute top-3 left-3 px-3 py-1.5 rounded-md bg-white/5 text-zinc-400 text-xs font-medium" data-copy="win-prompt">
+                  העתק
+                </button>
+                <pre id="win-prompt" class="text-zinc-300 text-sm leading-relaxed" dir="rtl" style="text-align: right; font-family: 'Heebo', sans-serif;">התקן לי את פאטצ' ה-RTL לקלוד דסקטופ בווינדוס.
+
+הריפו הרשמי: https://github.com/shraga100/claude-desktop-rtl-patch
+
+עשה את הצעדים הבאים:
+1. פתח PowerShell והרץ את הפקודה:
+   irm https://raw.githubusercontent.com/shraga100/claude-desktop-rtl-patch/main/install.ps1 | iex
+2. הסקריפט יבקש הרשאות מנהל (UAC). אישור אוטומטי.
+3. בתפריט שיופיע, בחר באפשרות 1 (Install).
+
+חשוב מאוד: השתמש בסקריפט הרשמי install.ps1 של הריפו. אל תנסה לבנות פאטצ' ידנית. הסקריפט מבצע שלבים קריטיים של הזרקת הקוד, החלפת hash בתוך claude.exe והחלפת תעודות חתימה.
+
+כשתסיים, אמור לי שאני יכול לפתוח את קלוד דסקטופ הרגיל ולהתחיל להשתמש. אותה אפליקציה כמו תמיד, רק עם תמיכת RTL.</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex gap-4">
+            <div class="step-num">3</div>
+            <div class="flex-1 pt-1">
+              <p class="text-zinc-100 font-semibold text-lg mb-2">פתחו את <span class="text-warm-400">Claude</span> כרגיל</p>
+              <p class="text-zinc-400 text-sm leading-relaxed">
+                בוינדוס הפאטצ' משנה את האפליקציה הקיימת. אין אפליקציה חדשה. פשוט פתחו את קלוד דסקטופ כרגיל. הוא יתנהג בדיוק אותו דבר, רק עם תמיכת RTL.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-white/5">
+          <p class="text-zinc-500 text-xs">
+            הסקריפט יוצר גיבוי מלא של הקבצים המקוריים. אם משהו ישתבש, אפשר לשחזר בלחיצה אחת.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Important to know -->
+<section class="py-20 md:py-24 px-6 border-t border-white/5">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <span class="badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 mb-4">חשוב לדעת</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-4">לפני שמתקינים</h2>
+      <p class="text-zinc-500 text-sm mt-3">המידע מותאם לפי מערכת ההפעלה שבחרתם למעלה</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Common -->
+      <div class="card card-hover rounded-xl p-6">
+        <div class="text-2xl mb-3">🔄</div>
+        <h3 class="font-bold text-lg mb-2">עדכוני קלוד מאפסים את הפאטצ'</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          בכל פעם שקלוד דסקטופ מתעדכן, הפאטצ' נמחק. תצטרכו להריץ את ההתקנה שוב. זה לוקח 30 שניות.
+        </p>
+      </div>
+
+      <div class="card card-hover rounded-xl p-6">
+        <div class="text-2xl mb-3">🛡️</div>
+        <h3 class="font-bold text-lg mb-2">לא רשמי של Anthropic</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          זה פתרון של הקהילה, לא של Anthropic. הם עוד לא הוסיפו תמיכה רשמית ב-RTL. עד שיתמכו, זה הפתרון הטוב ביותר.
+        </p>
+      </div>
+
+      <div class="card card-hover rounded-xl p-6">
+        <div class="text-2xl mb-3">💾</div>
+        <h3 class="font-bold text-lg mb-2">ההיסטוריה שלכם נשמרת</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          השיחות שלכם יושבות בשרתים של Anthropic, מחוברות לחשבון. הפאטצ' לא נוגע בהן. הכל ימשיך להיות שם.
+        </p>
+      </div>
+
+      <!-- Mac-specific -->
+      <div class="os-content active card card-hover rounded-xl p-6 border-warm-400/20" data-os="mac">
+        <div class="text-2xl mb-3">🍎</div>
+        <h3 class="font-bold text-lg mb-2">במק נוצרת אפליקציה חדשה</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          האפליקציה החדשה תיקרא <span class="font-mono text-warm-400 text-xs">Claude-RTL</span> ותשב ב-<span class="font-mono text-warm-400 text-xs">~/Applications</span>. הקלוד הרגיל שלכם נשאר תקין לחלוטין. שתי האפליקציות מחוברות לאותו חשבון.
+        </p>
+      </div>
+
+      <!-- Windows-specific -->
+      <div class="os-content card card-hover rounded-xl p-6 border-warm-400/20" data-os="windows">
+        <div class="text-2xl mb-3">🪟</div>
+        <h3 class="font-bold text-lg mb-2">בוינדוס הקלוד הקיים מתעדכן</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          אין אפליקציה חדשה. הסקריפט מעדכן את הקלוד הקיים שלכם. הוא יוצר גיבוי אוטומטי של הקבצים המקוריים, אז אפשר לשחזר בכל רגע.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-20 md:py-24 px-6 border-t border-white/5">
+  <div class="max-w-3xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl md:text-5xl font-bold mb-4">שאלות נפוצות</h2>
+    </div>
+
+    <div class="space-y-3">
+      <details class="card rounded-xl p-5 group">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          האם זה בטוח?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          הקוד פתוח לחלוטין בשני הריפוז. אפשר לראות בדיוק מה הסקריפט עושה. זה מקובל בקהילת המפתחים, אבל חשוב לדעת שזה מודיפיקציה לא מורשית של אנתרופיק.
+        </p>
+      </details>
+
+      <!-- Mac-specific FAQ -->
+      <details class="os-content active card rounded-xl p-5 group" data-os="mac">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          🍎 במק. אם משהו ישתבש, איך מסירים?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          פשוט מוחקים את Claude-RTL.app מהתיקייה ~/Applications. הקלוד הרגיל שלכם נשאר תקין לחלוטין כי הפאטצ' מעולם לא נגע בו.
+        </p>
+      </details>
+
+      <details class="os-content active card rounded-xl p-5 group" data-os="mac">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          🍎 במק. למה צריך אפליקציה חדשה ולא לעדכן את הקיימת?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          זו החלטה של מפתח הפאטצ' לטובת הביטחון שלכם. הקלוד המקורי נשאר נקי, ואם משהו ישתבש בעדכון, פשוט פותחים אותו במקום. שתי האפליקציות מחוברות לאותו חשבון, אז ההיסטוריה זמינה בשתיהן.
+        </p>
+      </details>
+
+      <!-- Windows-specific FAQ -->
+      <details class="os-content card rounded-xl p-5 group" data-os="windows">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          🪟 בוינדוס. אם משהו ישתבש, איך מסירים?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          מריצים שוב את אותה פקודת ההתקנה ב-PowerShell, ובתפריט בוחרים אפשרות 2 (Restore). הסקריפט שומר גיבוי מלא של הקבצים המקוריים ומשחזר אותם.
+        </p>
+      </details>
+
+      <details class="os-content card rounded-xl p-5 group" data-os="windows">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          🪟 בוינדוס. למה צריך הרשאות מנהל?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          כי הסקריפט מעדכן קבצים בתיקיית Program Files שדורשת הרשאות מנהל. ה-UAC הוא בקשת אישור סטנדרטית של וינדוס. לוחצים Yes וזהו.
+        </p>
+      </details>
+
+      <!-- Common -->
+      <details class="card rounded-xl p-5 group">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          אנגלית טהורה תיראה אחרת?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          לא. הפאטצ' חכם, מזהה אוטומטית את כיוון הטקסט. אם כתבתם רק אנגלית, יישאר LTR בדיוק כמו לפני. הוא משנה רק כשמזהה עברית.
+        </p>
+      </details>
+
+      <details class="card rounded-xl p-5 group">
+        <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center">
+          מה אם אין לי Claude Code?
+          <span class="text-warm-400 group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <p class="text-zinc-400 mt-3 leading-relaxed">
+          תורידו אותו מ-claude.ai/code. זה חינם, מתקינים בדקה. ואחרי שתסיימו את הפאטצ' תהיה לכם גם תמיכה ב-RTL וגם כלי מאוד שימושי לכל מיני דברים אחרים.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Credits -->
+<section class="py-16 px-6 border-t border-white/5">
+  <div class="max-w-4xl mx-auto text-center">
+    <h2 class="text-2xl font-bold mb-3">קרדיטים</h2>
+    <p class="text-zinc-400 mb-8 leading-relaxed">
+      כל הכבוד לשני המפתחים שבנו את הפתרונות.
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <a href="https://github.com/shraga100/claude-desktop-rtl-patch" target="_blank" class="card card-hover rounded-xl p-6 block">
+        <div class="text-zinc-500 text-sm mb-1">Windows</div>
+        <div class="font-bold text-lg mb-2">shraga100</div>
+        <div class="text-warm-400 text-sm">claude-desktop-rtl-patch</div>
+      </a>
+
+      <a href="https://github.com/soguy/claude-desktop-rtl-mac" target="_blank" class="card card-hover rounded-xl p-6 block">
+        <div class="text-zinc-500 text-sm mb-1">macOS</div>
+        <div class="font-bold text-lg mb-2">soguy</div>
+        <div class="text-warm-400 text-sm">claude-desktop-rtl-mac</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-10 px-6 border-t border-white/5">
+  <div class="max-w-4xl mx-auto text-center text-zinc-500 text-sm">
+    <p>נבנה עם הרבה תסכול ועוד יותר סבלנות.</p>
+  </div>
+</footer>
+
+<script>
+  // OS Selector + Tabs (synchronized)
+  function selectOS(os) {
+    // Update selector buttons
+    document.querySelectorAll('.os-selector, .tab-btn').forEach(b => {
+      if (b.dataset.tab === os) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    // Show matching tab content
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById('tab-' + os);
+    if (target) target.classList.add('active');
+
+    // Show OS-specific content blocks
+    document.querySelectorAll('.os-content').forEach(c => {
+      if (c.dataset.os === os) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  document.querySelectorAll('.os-selector, .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectOS(btn.dataset.tab));
+  });
+
+  // Auto-detect OS on first load
+  if (navigator.userAgent.indexOf('Win') !== -1) {
+    selectOS('windows');
+  }
+
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.copy;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      try {
+        await navigator.clipboard.writeText(target.textContent.trim());
+        const original = btn.textContent;
+        btn.textContent = 'הועתק ✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch (e) {
+        console.error('Copy failed', e);
+      }
+    });
+  });
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const href = link.getAttribute('href');
+      if (href === '#') return;
+      e.preventDefault();
+      const target = document.querySelector(href);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
